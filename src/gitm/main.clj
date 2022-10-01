@@ -7,23 +7,6 @@
 
 (defn -main [])
 
-(def repo-group-dirs
-  ["/Volumes/House/prg"
-   "/Volumes/House/Programming Projects"
-   "/Volumes/House/lib"])
-
-(defn repo-dirs []
-  (into ["/Volumes/House/Programming Projects/fin-man/dev/src/luisthiamnye/personal"
-         "/Users/luis/.config/clj-kondo"
-         "/Users/luis/.clojure"
-         "/Users/luis/.lsp"
-         "/Users/luis/.spacemacs.d"
-         "/Users/luis/.spacemacs.d/packages/zprint-mode"]
-        (comp (mapcat fs/list-dir)
-              (filter fs/directory?)
-              (map str))
-        repo-group-dirs))
-
 (defn remote-status [g]
   (first (gitq/rev-list g)))
 
@@ -53,35 +36,55 @@
                     :branch branch-name})))
           (gitp/git-branch-list g))))
 
-(def repo-data
-  (reduce (fn [acc x]
-            (cond
-              (not (:status x))
-              (update acc :nogit conj x)
-              (empty? (:remotes x))
-              (update acc :noremote conj x)
-              (some seq (vals (:status x)))
-              (update acc :pending conj x)
-              (some false? (map :synced? (:branches x)))
-              (update acc :unsync conj x)
-              :else
-              (update acc :synced conj x)))
-          {:nogit []
-           :noremote []
-           :pending []
-           :unsync []
-           :synced []}
-          (eduction
-           (map (fn [s]
-                  (if-let [_r (gitp/discover-repo s)]
-                    (let [g (gitp/load-repo s)]
-                      {:path s
-                       :current-branch (gitp/git-branch-current g)
-                       :status (gitp/git-status g)
-                       :remotes (gitp/git-remote-list g)
-                       :branches (branch-data g)})
-                    {:path s})))
-           (repo-dirs))))
+(comment
+  (def repo-group-dirs
+    ["/Volumes/House/prg"
+     "/Volumes/House/Programming Projects"
+     "/Volumes/House/lib"])
+
+  (defn repo-dirs []
+    (into ["/Volumes/House/Programming Projects/fin-man/dev/src/luisthiamnye/personal"
+           "/Users/luis/.config/clj-kondo"
+           "/Users/luis/.clojure"
+           "/Users/luis/.lsp"
+           "/Users/luis/.spacemacs.d"
+           "/Users/luis/.spacemacs.d/packages/zprint-mode"]
+          (comp (mapcat fs/list-dir)
+                (filter fs/directory?)
+                (map str))
+          repo-group-dirs))
+
+  (def repo-data
+    (reduce (fn [acc x]
+              (cond
+                (not (:status x))
+                (update acc :nogit conj x)
+                (empty? (:remotes x))
+                (update acc :noremote conj x)
+                (some seq (vals (:status x)))
+                (update acc :pending conj x)
+                (some false? (map :synced? (:branches x)))
+                (update acc :unsync conj x)
+                :else
+                (update acc :synced conj x)))
+            {:nogit []
+             :noremote []
+             :pending []
+             :unsync []
+             :synced []}
+            (eduction
+             (map (fn [s]
+                    (if-let [_r (gitp/discover-repo s)]
+                      (let [g (gitp/load-repo s)]
+                        {:path s
+                         :current-branch (gitp/git-branch-current g)
+                         :status (gitp/git-status g)
+                         :remotes (gitp/git-remote-list g)
+                         :branches (branch-data g)})
+                      {:path s})))
+             (repo-dirs))))
+  #!
+  )
 
 (comment
 
